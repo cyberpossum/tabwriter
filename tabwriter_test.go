@@ -10,7 +10,8 @@ import (
 	"io"
 	"io/ioutil"
 	"testing"
-	. "text/tabwriter"
+
+	. "github.com/cyberpossum/tabwriter"
 )
 
 type buffer struct {
@@ -171,6 +172,13 @@ var tests = []struct {
 	},
 
 	{
+		"1f esc ansi",
+		8, 0, 1, '.', ANSIColors,
+		"abc\033[\tdef", // unterminated ANSI escape sequence
+		"abc\033[\tdef",
+	},
+
+	{
 		"2",
 		8, 0, 1, '.', 0,
 		"\n\n\n",
@@ -182,6 +190,13 @@ var tests = []struct {
 		8, 0, 1, '.', 0,
 		"a\nb\nc",
 		"a\nb\nc",
+	},
+
+	{
+		"3 colors",
+		8, 0, 1, '.', ANSIColors,
+		"a\nb\n\033[93;41mc\033[0m",
+		"a\nb\n\033[93;41mc\033[0m",
 	},
 
 	{
@@ -255,10 +270,24 @@ var tests = []struct {
 	},
 
 	{
+		"7b colors",
+		8, 0, 1, ' ', ANSIColors,
+		"b) \033[93;41mfoo\033[0m\tbar",
+		"b) \033[93;41mfoo\033[0m  bar",
+	},
+
+	{
 		"7c",
 		8, 0, 1, '.', 0,
 		"c) foo\tbar\t",
 		"c) foo..bar",
+	},
+
+	{
+		"7c colors",
+		8, 0, 1, '.', ANSIColors,
+		"c) \033[93;41mfoo\033[0m\tbar\t",
+		"c) \033[93;41mfoo\033[0m..bar",
 	},
 
 	{
@@ -269,10 +298,24 @@ var tests = []struct {
 	},
 
 	{
+		"7d colors",
+		8, 0, 1, '.', ANSIColors,
+		"d) \033[93;41mfoo\033[0m\tbar\n",
+		"d) \033[93;41mfoo\033[0m..bar\n",
+	},
+
+	{
 		"7e",
 		8, 0, 1, '.', 0,
 		"e) foo\tbar\t\n",
 		"e) foo..bar.....\n",
+	},
+
+	{
+		"7e colors",
+		8, 0, 1, '.', ANSIColors,
+		"e) \033[93;41mfoo\033[0m\tbar\t\n",
+		"e) \033[93;41mfoo\033[0m..bar.....\n",
 	},
 
 	{
@@ -352,10 +395,24 @@ var tests = []struct {
 	},
 
 	{
+		"10a colors",
+		5, 0, 0, '.', ANSIColors,
+		"1\t2\t\033[93;41m3\033[0m\t4\n",
+		"1....2....\033[93;41m3\033[0m....4\n",
+	},
+
+	{
 		"10b",
 		5, 0, 0, '.', 0,
 		"1\t2\t3\t4\t\n",
 		"1....2....3....4....\n",
+	},
+
+	{
+		"10b colors",
+		5, 0, 0, '.', ANSIColors,
+		"1\t2\t\033[93;41m3\033[0m\t4\t\n",
+		"1....2....\033[93;41m3\033[0m....4....\n",
 	},
 
 	{
@@ -507,6 +564,13 @@ var tests = []struct {
 		4, 0, 0, '.', 0,
 		"a\t\tb",
 		"a.......b",
+	},
+
+	{
+		"15a colors",
+		4, 0, 0, '.', ANSIColors,
+		"\033[93;41ma\033[0m\t\tb",
+		"\033[93;41ma\033[0m.......b",
 	},
 
 	{

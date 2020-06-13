@@ -104,6 +104,7 @@ type Writer struct {
 	endChar byte     // terminating char of escaped sequence (Escape for escapes, '>', ';' for HTML tags/entities, or 0)
 	lines   [][]cell // list of lines; each line is a list of cells
 	widths  []int    // list of column widths in runes - re-used during formatting
+	pch     byte     // previously processed character
 }
 
 // addLine adds a new line.
@@ -192,7 +193,13 @@ const (
 	// Print a vertical bar ('|') between columns (after formatting).
 	// Discarded columns appear as zero-width columns ("||").
 	Debug
+
+	// Handle ANSI SGR escape codes as 0-length runes
+	ANSIColors
 )
+
+// Escape character code
+const esc byte = 0x1b
 
 // A Writer must be initialized with a call to Init. The first parameter (output)
 // specifies the filter output. The remaining parameters control the formatting:
@@ -439,6 +446,8 @@ func (b *Writer) startEscape(ch byte) {
 		b.endChar = '>'
 	case '&':
 		b.endChar = ';'
+	case '[':
+		b.endChar = 'm'
 	}
 }
 
@@ -455,6 +464,8 @@ func (b *Writer) endEscape() {
 			b.cell.width -= 2 // don't count the Escape chars
 		}
 	case '>': // tag of zero width
+	case 'm': // ANSI color escape code of zero width
+		b.cell.width-- // don't count the first ESC char
 	case ';':
 		b.cell.width++ // entity, count as one rune
 	}
@@ -578,6 +589,13 @@ func (b *Writer) Write(buf []byte) (n int, err error) {
 					n = i
 					b.startEscape(ch)
 				}
+			case '[':
+				if b.pch == esc && b.flags&ANSIColors != 0 {
+					b.append(buf[n:i])
+					b.updateWidth()
+					n = i
+					b.startEscape(ch)
+				}
 			}
 
 		} else {
@@ -593,6 +611,7 @@ func (b *Writer) Write(buf []byte) (n int, err error) {
 				b.endEscape()
 			}
 		}
+		b.pch = ch
 	}
 
 	// append leftover text
